@@ -7,6 +7,7 @@ from math import *
 		
 def trace(function, xmin, xmax, nstep, output):
 	#output.write("x, %s\n" % function)
+	output.write("%!\n")
 	
 	func_save = function
 	function = eval("lambda x:" + function)
@@ -20,8 +21,8 @@ def trace(function, xmin, xmax, nstep, output):
 	for i in range(nstep+1):
 		x = xmin + i*step
 		try:
-			x_values.append(x)
 			y = function(x)
+			x_values.append(x)
 			y_values.append(y)
 			if ymin > y:
 				ymin = y
@@ -49,7 +50,7 @@ def trace(function, xmin, xmax, nstep, output):
 		output.write("%s %s lineto\n" % (x+400, y))
 		output.write("%s %s moveto\n" % (x-40, y-4))
 		output.write("(%s) show\n" % str(int((ymin+i*step)*100)/100.0))
-		
+	
 	step = (xmax - xmin) / 6.0
 	for i in range(0, 7):
 		x = 106 + 400 * ((xmin+i*step) - xmin) / (xmax - xmin)
@@ -77,20 +78,21 @@ def trace(function, xmin, xmax, nstep, output):
 	output.write("stroke\n")
 	
 	### Fonction ###
-	x = 106 + 400 * (x_values[0] - xmin) / (xmax - xmin)
-	y = 196 + 400 * (y_values[0] - ymin) / (ymax - ymin)
-	output.write("newpath\n")
-	output.write("%s %s moveto\n" % (x, y))
+	if len(x_values) > 0:
+		x = 106 + 400 * (x_values[0] - xmin) / (xmax - xmin)
+		y = 196 + 400 * (y_values[0] - ymin) / (ymax - ymin)
+		output.write("newpath\n")
+		output.write("%s %s moveto\n" % (x, y))
 	
-	for i in range(nstep+1):
-		x = 106 + 400 * (x_values[i] - xmin) / (xmax - xmin)
-		y = 196 + 400 * (y_values[i] - ymin) / (ymax - ymin)
-		output.write("%s %s lineto\n" % (x, y))
+		for i in range(len(x_values)):
+			x = 106 + 400 * (x_values[i] - xmin) / (xmax - xmin)
+			y = 196 + 400 * (y_values[i] - ymin) / (ymax - ymin)
+			output.write("%s %s lineto\n" % (x, y))
 	
 	output.write("stroke\n")	
 	output.write("showpage\n")
 	
-		
+
 
 def main(argv=None):
 	if argv is None:
@@ -102,15 +104,23 @@ def main(argv=None):
 	except getopt.GetoptError as message:
 		sys.stderr.write("%s\n" % message)
 		sys.exit(1)
-		
+	
+	# Affiche le message d'aide
 	for option, value in options:
 		if option in ["-h", "--help"]:
 			sys.stderr.write("Usage : ./trace.py ([output=]) (o:) \"func(x)\" \n")
 			sys.stderr.write("-o, --output : specifier un fichier pour la sortie \n")
+			sys.stderr.write("-m, --xmin : borne inférieure de l'interval de définition \n")
+			sys.stderr.write("-M, --xmax : borne supérieure de l'interval de définition \n")
+			sys.stderr.write("func(x) définition de la fonction à tracer en fontion de 'x' \n")
 			sys.exit(1)
 	
 	if len(argv) != 1:
-		sys.stderr.write("Usage : ./trace.py ([output=]) (o:) \"func(x)\" \"xmin\" \"xmax\" \n --help for help \n")
+		sys.stderr.write("Usage : ./trace.py ([output=]) (o:) \"func(x)\" \n")
+		sys.stderr.write("-o, --output : specifier un fichier pour la sortie \n")
+		sys.stderr.write("-m, --xmin : borne inférieure de l'interval de définition \n")
+		sys.stderr.write("-M, --xmax : borne supérieure de l'interval de définition \n")
+		sys.stderr.write("func(x) définition de la fonction à tracer en fontion de 'x' \n")
 		sys.exit(1)
 	function = argv[0]
 	
@@ -118,15 +128,8 @@ def main(argv=None):
 		sys.stderr.write("function is empty \n")
 		sys.exit(1)
 	
-	xmin, xmax = 0.0, 1.0
-	for option, value in options:
-		if option in ["-min", "--xmin"]:
-			xmin = value
-		if option in ["-max", "--xmax"]:
-			xmax = value
-	
 	output = sys.stdout
-	
+	xmin, xmax = 0.0, 1.0
 	for option, value in options:
 		if option in ["-o", "--output"]:
 			output = file(value, "w")
@@ -135,16 +138,13 @@ def main(argv=None):
 		elif option in ["-M", "--xmax"]:
 			xmax = float(value)
 		else:
-			assert False, "unhandled option"
+			assert False, "option " + option + "non définie"
 	
-	#nstep = (int) (abs(xmin) * abs(xmax))
-	nstep = 100
 	if xmax < xmin:
 		sys.stderr.write("xmax : %s ne doit pas être plus petit que xmin  : %s\n" %(xmax, xmin) )
 		sys.exit(1)
 	
-	output.write("%!\n")
-	trace(function, xmin, xmax, nstep, output)
+	trace(function, xmin, xmax, 100, output)
 
 
 if __name__ == "__main__":
